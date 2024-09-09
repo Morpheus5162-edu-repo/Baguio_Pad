@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace Baguio_Pad
 {
-    public partial class Form1 : Form
+    public partial class Notepad : Form
     {
-        public Form1()
+        public Notepad()
         {
             InitializeComponent();
         }
@@ -39,8 +39,9 @@ namespace Baguio_Pad
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
             string message = "Do you want to close this window?";
-            string title = "Close Window";
+            string title = "Notepad";
             MessageBoxButtons buttons = MessageBoxButtons.YesNo;
             DialogResult result = MessageBox.Show(message, title, buttons);
             if (result == DialogResult.Yes)
@@ -49,7 +50,7 @@ namespace Baguio_Pad
             }
             else
             {
-                MessageBox.Show("", "Ok", MessageBoxButtons.OK);
+                Notepad_ForceClosed_SaveError((FormClosingEventArgs)e);
             }
         }
 
@@ -114,7 +115,59 @@ namespace Baguio_Pad
             newToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.N;
             openToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.O;
             saveToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            exitToolStripMenuItem.ShortcutKeys = Keys.Alt | Keys.F4;
+            dateTimeToolStripMenuItem.ShortcutKeys = Keys.F5;
+            
+            // Initialize strip label with "Line, Col, and Characters"
+            toolStripStatusLabel1.Text = $"Line 1, Col 1  |";
+            toolStripStatusLabel2.Text = $"0 characters";
+
+            // Wire up events for richTextBox1
+            richTextBox1.TextChanged += richTextBox1_TextChanged;
+        }
+
+        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        {
+            int index = richTextBox1.SelectionStart;
+            int line = richTextBox1.GetLineFromCharIndex(index);
+            int col = index - richTextBox1.GetFirstCharIndexOfCurrentLine();
+            int charCount = richTextBox1.Text.Length;
+
+            toolStripStatusLabel1.Text = $"Line {line + 1}, Col {col + 1}  |";
+            toolStripStatusLabel2.Text = $"{charCount} characters";
+        }
+
+        private void Notepad_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Notepad_ForceClosed_SaveError(e);
+        }
+
+        private void Notepad_ForceClosed_SaveError(FormClosingEventArgs e)
+        {
+            string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
+            string message = $"Do you want to save changes to {firstLine}.txt?";
+            string title = "Notepad";
+            MessageBoxButtons buttons = MessageBoxButtons.YesNoCancel;
+
+            if (firstLine != string.Empty)
+            {
+                DialogResult result = MessageBox.Show(message, title, buttons);
+
+                if (result == DialogResult.Yes)
+                {
+                    SaveFileDialog op = new SaveFileDialog();
+                    op.Title = "Save";
+                    op.Filter = "Text Document(*.txt)|*.txt| All Files(*.*)|*.*";
+                    op.FileName = firstLine;
+                    if (op.ShowDialog() == DialogResult.OK)
+                        richTextBox1.SaveFile(op.FileName, RichTextBoxStreamType.PlainText);
+                    this.Text = op.FileName;
+                }
+
+                if (result == DialogResult.Cancel)
+                {
+                    e.Cancel = true;
+                }
+            }
         }
     }
 }
