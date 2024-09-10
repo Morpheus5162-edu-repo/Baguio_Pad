@@ -39,18 +39,55 @@ namespace Baguio_Pad
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
             string message = "Do you want to close this window?";
             string title = "Notepad";
             MessageBoxButtons buttons = MessageBoxButtons.YesNo;
             DialogResult result = MessageBox.Show(message, title, buttons);
             if (result == DialogResult.Yes)
             {
-                this.Close();
+                string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
+
+                if (!string.IsNullOrEmpty(firstLine))
+                {
+                    string message2 = $"Do you want to save changes to {firstLine}.txt?";
+                    string title2 = "Notepad";
+                    MessageBoxButtons buttons2 = MessageBoxButtons.YesNoCancel;
+                    DialogResult result2 = MessageBox.Show(message2, title2, buttons2);
+
+                    if (result2 == DialogResult.Yes)
+                    {
+                        SaveFileDialog op = new SaveFileDialog();
+                        op.Title = "Save";
+                        op.Filter = "Text Document(*.txt)|*.txt| All Files(*.*)|*.*";
+                        op.FileName = firstLine;
+                        if (op.ShowDialog() == DialogResult.OK)
+                        {
+                            richTextBox1.SaveFile(op.FileName, RichTextBoxStreamType.PlainText);
+                            this.Text = op.FileName;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (result2 == DialogResult.No)
+                    {
+                        // If user chooses No, close the form without saving
+                        this.Close();
+                    }
+                    else if (result2 == DialogResult.Cancel)
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    this.Close(); //When the No in Close Window is pressed
+                }
             }
             else
             {
-                Notepad_ForceClosed_SaveError((FormClosingEventArgs)e);
+                return;
             }
         }
 
@@ -138,17 +175,12 @@ namespace Baguio_Pad
 
         private void Notepad_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Notepad_ForceClosed_SaveError(e);
-        }
-
-        private void Notepad_ForceClosed_SaveError(FormClosingEventArgs e)
-        {
             string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
             string message = $"Do you want to save changes to {firstLine}.txt?";
             string title = "Notepad";
             MessageBoxButtons buttons = MessageBoxButtons.YesNoCancel;
 
-            if (firstLine != string.Empty)
+            if (!string.IsNullOrEmpty(firstLine))
             {
                 DialogResult result = MessageBox.Show(message, title, buttons);
 
@@ -159,14 +191,19 @@ namespace Baguio_Pad
                     op.Filter = "Text Document(*.txt)|*.txt| All Files(*.*)|*.*";
                     op.FileName = firstLine;
                     if (op.ShowDialog() == DialogResult.OK)
+                    {
                         richTextBox1.SaveFile(op.FileName, RichTextBoxStreamType.PlainText);
-                    this.Text = op.FileName;
+                        this.Text = op.FileName;
+                    }
+                    else
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
                 }
 
                 if (result == DialogResult.Cancel)
-                {
                     e.Cancel = true;
-                }
             }
         }
     }
