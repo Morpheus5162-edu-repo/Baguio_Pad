@@ -43,47 +43,10 @@ namespace Baguio_Pad
             string title = "Notepad";
             MessageBoxButtons buttons = MessageBoxButtons.YesNo;
             DialogResult result = MessageBox.Show(message, title, buttons);
+
             if (result == DialogResult.Yes)
             {
-                string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
-
-                if (!string.IsNullOrEmpty(firstLine))
-                {
-                    string message2 = $"Do you want to save changes to {firstLine}.txt?";
-                    string title2 = "Notepad";
-                    MessageBoxButtons buttons2 = MessageBoxButtons.YesNoCancel;
-                    DialogResult result2 = MessageBox.Show(message2, title2, buttons2);
-
-                    if (result2 == DialogResult.Yes)
-                    {
-                        SaveFileDialog op = new SaveFileDialog();
-                        op.Title = "Save";
-                        op.Filter = "Text Document(*.txt)|*.txt| All Files(*.*)|*.*";
-                        op.FileName = firstLine;
-                        if (op.ShowDialog() == DialogResult.OK)
-                        {
-                            richTextBox1.SaveFile(op.FileName, RichTextBoxStreamType.PlainText);
-                            this.Text = op.FileName;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
-                    else if (result2 == DialogResult.No)
-                    {
-                        // If user chooses No, close the form without saving
-                        this.Close();
-                    }
-                    else if (result2 == DialogResult.Cancel)
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    this.Close(); //When the No in Close Window is pressed
-                }
+                Notepad_ForceClosed_SaveMessage(richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty);
             }
             else
             {
@@ -176,12 +139,16 @@ namespace Baguio_Pad
         private void Notepad_FormClosing(object sender, FormClosingEventArgs e)
         {
             string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
-            string message = $"Do you want to save changes to {firstLine}.txt?";
-            string title = "Notepad";
-            MessageBoxButtons buttons = MessageBoxButtons.YesNoCancel;
+            Notepad_ForceClosed_SaveMessage(firstLine);
+        }
 
+        private void Notepad_ForceClosed_SaveMessage(string firstLine)
+        {
             if (!string.IsNullOrEmpty(firstLine))
             {
+                string message = $"Do you want to save changes to {firstLine}.txt?";
+                string title = "Notepad";
+                MessageBoxButtons buttons = MessageBoxButtons.YesNoCancel;
                 DialogResult result = MessageBox.Show(message, title, buttons);
 
                 if (result == DialogResult.Yes)
@@ -197,13 +164,21 @@ namespace Baguio_Pad
                     }
                     else
                     {
-                        e.Cancel = true;
                         return;
                     }
                 }
-
-                if (result == DialogResult.Cancel)
-                    e.Cancel = true;
+                else if (result == DialogResult.No)
+                {
+                    Application.ExitThread(); // If user chooses No in the seecond dialog, close the form without saving
+                }
+                else if (result == DialogResult.No)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                Application.Exit(); //When user chooses No in the first dialog
             }
         }
     }
