@@ -138,11 +138,11 @@ namespace Baguio_Pad
 
         private void Notepad_FormClosing(object sender, FormClosingEventArgs e)
         {
-            string firstLine = richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty;
-            Notepad_ForceClosed_SaveMessage(firstLine);
+            Notepad_ForceClosed_SaveMessage(richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : string.Empty, e);
         }
 
-        private void Notepad_ForceClosed_SaveMessage(string firstLine)
+        // Updated Notepad_ForceClosed_SaveMessage to handle both scenarios
+        private void Notepad_ForceClosed_SaveMessage(string firstLine, FormClosingEventArgs e = null)
         {
             if (!string.IsNullOrEmpty(firstLine))
             {
@@ -164,21 +164,38 @@ namespace Baguio_Pad
                     }
                     else
                     {
-                        return;
+                        if (e != null)
+                        {
+                            e.Cancel = true; // Cancel form close if in FormClosing event
+                        }
+                        return; // Exit early to stop further action
                     }
                 }
                 else if (result == DialogResult.No)
                 {
-                    Application.ExitThread(); // If user chooses No in the seecond dialog, close the form without saving
+                    if (e == null)
+                    {
+                        // If called from exitToolStripMenuItem, closes all the windows directly
+                        Application.ExitThread();
+                    }
+                    // Otherwise, allow form to close normally
                 }
-                else if (result == DialogResult.No)
+                else if (result == DialogResult.Cancel)
                 {
-                    return;
+                    if (e != null)
+                    {
+                        e.Cancel = true; // Cancel form close if in FormClosing event
+                    }
                 }
             }
             else
             {
-                Application.Exit(); //When user chooses No in the first dialog
+                if (e == null)
+                {
+                    // Called from menu, exit application
+                    Application.Exit();
+                }
+                // If no content, let the form close naturally
             }
         }
     }
